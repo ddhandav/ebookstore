@@ -1,0 +1,475 @@
+openapi: 3.0.3
+info:
+  title: E-Bookstore Platform API
+  description: |
+    AI Specialist Capstone Project - Cloud FullStack.
+    Backend REST API specification for E-Bookstore platform with browsing, categories, brands, basket,
+    tentative delivery dates, gift points redemption, payment, purchase confirmation, cancel order within 48h,
+    and Buy It Again features.
+  version: 1.0.0
+  contact:
+    name: AI Specialist Capstone Team
+    email: capstone-support@ibm.com
+
+servers:
+  - url: http://localhost:8080
+    description: Local Development Server
+
+tags:
+  - name: Authentication
+    description: User registration, login, and profile
+  - name: Product Catalog
+    description: Browse books, categories, brands, search, and recommendations
+  - name: Shopping Cart
+    description: Manage user shopping basket
+  - name: Delivery Addresses
+    description: Select and manage delivery addresses
+  - name: Orders & Checkout
+    description: Checkout, order history, cancel within 48h, and Buy It Again
+
+paths:
+  /api/auth/register:
+    post:
+      tags: [Authentication]
+      summary: Register new user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterRequest'
+      responses:
+        '201':
+          description: Registration successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthApiResponse'
+
+  /api/auth/login:
+    post:
+      tags: [Authentication]
+      summary: Authenticate user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthApiResponse'
+
+  /api/auth/profile/{userId}:
+    get:
+      tags: [Authentication]
+      summary: Get user profile with gift points balance
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: User profile details
+
+  /api/catalog/categories:
+    get:
+      tags: [Product Catalog]
+      summary: List all book categories
+      responses:
+        '200':
+          description: Categories list
+
+  /api/catalog/brands:
+    get:
+      tags: [Product Catalog]
+      summary: List all publisher brands
+      responses:
+        '200':
+          description: Publisher brands list
+
+  /api/catalog/books:
+    get:
+      tags: [Product Catalog]
+      summary: Browse and search books
+      parameters:
+        - name: categoryId
+          in: query
+          schema:
+            type: integer
+        - name: brandId
+          in: query
+          schema:
+            type: integer
+        - name: search
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Filtered book list
+
+  /api/catalog/books/{id}:
+    get:
+      tags: [Product Catalog]
+      summary: Get book details with tentative delivery date
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Book details
+
+  /api/catalog/books/{id}/related:
+    get:
+      tags: [Product Catalog]
+      summary: Get related books in same category
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Related books list
+
+  /api/catalog/recommendations:
+    get:
+      tags: [Product Catalog]
+      summary: AI-augmented book recommendations based on order history
+      parameters:
+        - name: userId
+          in: query
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Recommended books
+
+  /api/cart/{userId}:
+    get:
+      tags: [Shopping Cart]
+      summary: Get shopping cart items and subtotal
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: User shopping cart
+    delete:
+      tags: [Shopping Cart]
+      summary: Clear shopping cart
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Cart cleared
+
+  /api/cart/{userId}/items:
+    post:
+      tags: [Shopping Cart]
+      summary: Add book to cart
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AddToCartRequest'
+      responses:
+        '200':
+          description: Item added
+
+  /api/cart/{userId}/items/{itemId}:
+    put:
+      tags: [Shopping Cart]
+      summary: Update cart item quantity
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: itemId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateCartItemRequest'
+      responses:
+        '200':
+          description: Cart updated
+    delete:
+      tags: [Shopping Cart]
+      summary: Remove item from cart
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: itemId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Item removed
+
+  /api/users/{userId}/addresses:
+    get:
+      tags: [Delivery Addresses]
+      summary: List user delivery addresses
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Address list
+    post:
+      tags: [Delivery Addresses]
+      summary: Add delivery address
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AddressRequest'
+      responses:
+        '201':
+          description: Address added
+
+  /api/orders/checkout/{userId}:
+    post:
+      tags: [Orders & Checkout]
+      summary: Place order with payment and points redemption
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CheckoutRequest'
+      responses:
+        '201':
+          description: Order placed and payment confirmed
+
+  /api/orders/user/{userId}:
+    get:
+      tags: [Orders & Checkout]
+      summary: Get order history
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: List of user orders
+
+  /api/orders/{orderId}:
+    get:
+      tags: [Orders & Checkout]
+      summary: Get order details by ID
+      parameters:
+        - name: orderId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Order details
+
+  /api/orders/{orderId}/cancel/{userId}:
+    post:
+      tags: [Orders & Checkout]
+      summary: Cancel order within 48 hours
+      parameters:
+        - name: orderId
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Order cancelled and points refunded
+
+  /api/orders/buy-it-again/{userId}:
+    get:
+      tags: [Orders & Checkout]
+      summary: Buy It Again list
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Distinct previously ordered books
+
+components:
+  schemas:
+    RegisterRequest:
+      type: object
+      required: [name, email, password]
+      properties:
+        name:
+          type: string
+          example: Alice Smith
+        email:
+          type: string
+          example: alice@example.com
+        password:
+          type: string
+          example: secret123
+
+    LoginRequest:
+      type: object
+      required: [email, password]
+      properties:
+        email:
+          type: string
+          example: john.doe@example.com
+        password:
+          type: string
+          example: password123
+
+    AuthApiResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        message:
+          type: string
+        data:
+          type: object
+          properties:
+            userId:
+              type: integer
+            name:
+              type: string
+            email:
+              type: string
+            giftPoints:
+              type: integer
+            token:
+              type: string
+
+    AddToCartRequest:
+      type: object
+      required: [bookId, quantity]
+      properties:
+        bookId:
+          type: integer
+          example: 1
+        quantity:
+          type: integer
+          example: 1
+
+    UpdateCartItemRequest:
+      type: object
+      required: [quantity]
+      properties:
+        quantity:
+          type: integer
+          example: 2
+
+    AddressRequest:
+      type: object
+      required: [recipientName, street, city, state, postalCode, country]
+      properties:
+        recipientName:
+          type: string
+          example: John Doe
+        street:
+          type: string
+          example: 123 Main St
+        city:
+          type: string
+          example: Austin
+        state:
+          type: string
+          example: TX
+        postalCode:
+          type: string
+          example: "78701"
+        country:
+          type: string
+          example: USA
+        default:
+          type: boolean
+          example: true
+
+    CheckoutRequest:
+      type: object
+      required: [addressId, paymentMethod]
+      properties:
+        addressId:
+          type: integer
+          example: 1
+        paymentMethod:
+          type: string
+          enum: [CREDIT_CARD, DEBIT_CARD, GIFT_POINTS, MIXED]
+          example: CREDIT_CARD
+        cardNumber:
+          type: string
+          example: "4111222233334444"
+        cardExpiry:
+          type: string
+          example: "12/28"
+        cvv:
+          type: string
+          example: "123"
+        redeemPoints:
+          type: integer
+          example: 200
